@@ -1,4 +1,4 @@
-# Kura. — Simple Credit Ledger for Shop & Chop Owners
+# Kura. — Simple Credit Ledger for Shop Owners, Chop Owners & Traders
 
 **Kura** is an offline-first Android credit ledger app built with Kotlin and Jetpack Compose for shopkeepers, chop bar owners, provision stores, and market traders to track **who owes them** and **who they owe**.
 
@@ -10,7 +10,7 @@ All ledger records live locally on the device in a Room SQLite database, protect
 
 | Document | Audience | Contents |
 | :--- | :--- | :--- |
-| [User Guide](docs/user-guide.md) | Shop & chop owners, testers | Onboarding flow, passcode lock, phonebook import, credit/payment entries, WhatsApp reminders, backup & restore |
+| [User Guide](docs/user-guide.md) | Shop owners, chop owners, traders, testers | Onboarding flow, passcode lock, phonebook import, credit/payment entries, WhatsApp reminders, backup & restore |
 | [Architecture](docs/architecture.md) | Android developers | Screen flow, MVVM state management, Room SQLite schema, DataStore passcode security, backup JSON v2 spec |
 | [Deployment & Permissions](docs/deployment.md) | Release managers | Build configuration, APK/AAB export, Android permissions, Play Store compliance |
 
