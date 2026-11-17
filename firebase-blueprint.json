@@ -1,0 +1,169 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Merchant profile and ledger preferences for a Kura user",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owner"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the merchant"
+        },
+        "biz": {
+          "type": "string",
+          "description": "Optional business name"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Optional merchant phone number"
+        },
+        "loc": {
+          "type": "string",
+          "description": "Optional business location"
+        },
+        "currency": {
+          "type": "string",
+          "description": "Currency symbol (e.g. GH₵)"
+        },
+        "countryCode": {
+          "type": "string",
+          "description": "Country dialing code without plus (e.g. 233)"
+        },
+        "onboarded": {
+          "type": "boolean",
+          "description": "Whether initial profile setup is completed"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp (FieldValue.serverTimestamp())"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp (FieldValue.serverTimestamp())"
+        }
+      },
+      "required": ["userId", "name", "currency", "countryCode", "onboarded", "createdAt", "updatedAt"]
+    },
+    "LedgerContact": {
+      "title": "LedgerContact",
+      "description": "A customer or supplier tracked in the user's Kura ledger",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner UID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of customer or supplier"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number (may be empty)"
+        },
+        "loc": {
+          "type": "string",
+          "description": "Location or landmark (may be empty)"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["customer", "supplier"],
+          "description": "Whether this contact is a customer or supplier"
+        },
+        "deleted": {
+          "type": "boolean",
+          "description": "Soft-delete flag for Recently deleted"
+        },
+        "deletedAtMillis": {
+          "type": "integer",
+          "description": "Epoch millis when moved to Recently deleted"
+        },
+        "createdAtMillis": {
+          "type": "integer",
+          "description": "Epoch millis when created"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp (FieldValue.serverTimestamp())"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp (FieldValue.serverTimestamp())"
+        }
+      },
+      "required": ["userId", "name", "phone", "loc", "type", "deleted", "createdAtMillis", "createdAt", "updatedAt"]
+    },
+    "LedgerTransaction": {
+      "title": "LedgerTransaction",
+      "description": "An immutable credit or payment entry linked to a LedgerContact",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner UID"
+        },
+        "contactId": {
+          "type": "string",
+          "description": "Associated LedgerContact document ID"
+        },
+        "amountCents": {
+          "type": "integer",
+          "description": "Signed amount in minor units (positive = owed to user / paid supplier; negative = payment received / bought on credit)"
+        },
+        "note": {
+          "type": "string",
+          "description": "Optional note describing the entry"
+        },
+        "tsMillis": {
+          "type": "integer",
+          "description": "Transaction timestamp in epoch millis"
+        },
+        "voided": {
+          "type": "boolean",
+          "description": "True if entry has been voided or superseded by a correction"
+        },
+        "voidedAtMillis": {
+          "type": "integer",
+          "description": "Epoch millis when voided"
+        },
+        "fixOfTxId": {
+          "type": "string",
+          "description": "Original transaction ID when this entry is a correction"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp (FieldValue.serverTimestamp())"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp (FieldValue.serverTimestamp())"
+        }
+      },
+      "required": ["userId", "contactId", "amountCents", "note", "tsMillis", "voided", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Merchant profile and ledger preferences"
+    },
+    "/users/{userId}/contacts/{contactId}": {
+      "schema": { "$ref": "#/entities/LedgerContact" },
+      "description": "Customer and supplier contacts owned by the user"
+    },
+    "/users/{userId}/transactions/{txId}": {
+      "schema": { "$ref": "#/entities/LedgerTransaction" },
+      "description": "Credit and payment entries owned by the user"
+    }
+  }
+}

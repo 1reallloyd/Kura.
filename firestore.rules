@@ -1,0 +1,137 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 60 &&
+             (!('biz' in data) || (data.biz is string && data.biz.size() <= 80)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 30)) &&
+             (!('loc' in data) || (data.loc is string && data.loc.size() <= 80)) &&
+             data.currency is string && data.currency.size() >= 1 && data.currency.size() <= 5 &&
+             data.countryCode is string && data.countryCode.size() >= 1 && data.countryCode.size() <= 4 &&
+             data.onboarded is bool;
+    }
+
+    function isValidLedgerContact(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 60 &&
+             data.phone is string && data.phone.size() <= 30 &&
+             data.loc is string && data.loc.size() <= 80 &&
+             data.type in ['customer', 'supplier'] &&
+             data.deleted is bool &&
+             data.createdAtMillis is int && data.createdAtMillis >= 0 &&
+             (!('deletedAtMillis' in data) || (data.deletedAtMillis is int && data.deletedAtMillis >= 0));
+    }
+
+    function isValidLedgerTransaction(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             isValidId(data.contactId) &&
+             data.amountCents is int && data.amountCents != 0 &&
+             data.note is string && data.note.size() <= 120 &&
+             data.tsMillis is int && data.tsMillis > 0 &&
+             data.voided is bool &&
+             (!('voidedAtMillis' in data) || (data.voidedAtMillis is int && data.voidedAtMillis > 0)) &&
+             (!('fixOfTxId' in data) || isValidId(data.fixOfTxId));
+    }
+
+    match /users/{userId} {
+      allow get, list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['userId', 'name', 'currency', 'countryCode', 'onboarded', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'name', 'biz', 'phone', 'loc', 'currency', 'countryCode', 'onboarded', 'createdAt', 'updatedAt']) &&
+                       incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['name', 'biz', 'phone', 'loc', 'currency', 'countryCode', 'onboarded', 'updatedAt']);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /contacts/{contactId} {
+        allow get: if isOwner(userId) && isValidId(contactId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(contactId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'name', 'phone', 'loc', 'type', 'deleted', 'createdAtMillis', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'name', 'phone', 'loc', 'type', 'deleted', 'deletedAtMillis', 'createdAtMillis', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         isValidLedgerContact(incoming());
+
+        allow update: if isOwner(userId) &&
+                         isValidId(contactId) &&
+                         isValidLedgerContact(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().createdAtMillis == existing().createdAtMillis &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'loc', 'type', 'deleted', 'deletedAtMillis', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(contactId);
+      }
+
+      match /transactions/{txId} {
+        allow get: if isOwner(userId) && isValidId(txId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(txId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'contactId', 'amountCents', 'note', 'tsMillis', 'voided', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'contactId', 'amountCents', 'note', 'tsMillis', 'voided', 'voidedAtMillis', 'fixOfTxId', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         isValidLedgerTransaction(incoming());
+
+        allow update: if isOwner(userId) &&
+                         isValidId(txId) &&
+                         isValidLedgerTransaction(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().contactId == existing().contactId &&
+                         incoming().amountCents == existing().amountCents &&
+                         incoming().tsMillis == existing().tsMillis &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['voided', 'voidedAtMillis', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(txId);
+      }
+    }
+  }
+}

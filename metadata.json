@@ -1,0 +1,6 @@
+{
+  "name": "Kura",
+  "description": "Simple credit ledger to track who owes you and who you owe, with phonebook contact import and WhatsApp reminders.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

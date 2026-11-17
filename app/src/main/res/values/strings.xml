@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Kura</string>
+    <string name="tagline">Know who owes you.</string>
+    <string name="offline_badge">Cloud-synced &amp; offline-ready</string>
+    <string name="nav_customers">Customers</string>
+    <string name="nav_summary">Summary</string>
+    <string name="nav_settings">Settings</string>
+    <string name="sign_in_google">Sign in with Google</string>
+    <string name="choose_from_contacts">Choose from phonebook</string>
+    <string name="pick_single_contact">Pick one from phonebook</string>
+</resources>
